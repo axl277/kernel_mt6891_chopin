@@ -43,7 +43,7 @@ done
 # ReSukisu
 if [ "$INCLUDE_KSU" = true ]; then
     echo "Integrating ReSukiSU..."
-    curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
+    curl -LSs "https://raw.githubusercontent.com/BakaSU/BakaSU/main/kernel/setup.sh" | bash -s main
 fi
 
 # Compilation process
