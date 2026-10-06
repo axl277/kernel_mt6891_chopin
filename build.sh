@@ -33,7 +33,7 @@ for arg in "$@"; do
     case $arg in
         -c) CLEAN_BUILD=true ;;
         -ksu) INCLUDE_KSU=true
-              ZIPNAME="Artic-Kernel-ReSukiSU-${DEVICE}-${DATE}.zip"
+              ZIPNAME="Artic-Kernel-BakaSU-${DEVICE}-${DATE}.zip"
               ;;
     esac
 done
