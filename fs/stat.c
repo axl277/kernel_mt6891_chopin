@@ -354,7 +354,7 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
 }
 
 #ifdef CONFIG_KSU_MANUAL_HOOK
-__attribute__((hot)) 
+__attribute__((hot))
 extern int ksu_handle_stat(int *dfd, const char __user **filename_user,
 				int *flags);
 
@@ -525,7 +525,7 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
 	int error;
 
 #ifdef CONFIG_KSU_MANUAL_HOOK // 32-bit su
-	ksu_handle_stat(&dfd, &filename, &flag); 
+	ksu_handle_stat(&dfd, &filename, &flag);
 #endif
 	error = vfs_fstatat(dfd, filename, &stat, flag);
 	if (error)
