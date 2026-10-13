@@ -33,7 +33,7 @@ for arg in "$@"; do
     case $arg in
         -c) CLEAN_BUILD=true ;;
         -ksu) INCLUDE_KSU=true
-              ZIPNAME="Artic-Kernel-BakaSU-${DEVICE}-${DATE}.zip"
+              ZIPNAME="Artic-Kernel-ReSukiSU-${DEVICE}-${DATE}.zip"
               ;;
     esac
 done
@@ -43,7 +43,8 @@ done
 # ReSukisu
 if [ "$INCLUDE_KSU" = true ]; then
     echo "Integrating ReSukiSU..."
-    curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash
+    curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
+fi
 
 # Compilation process
 mkdir -p out
