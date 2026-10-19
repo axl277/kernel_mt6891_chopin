@@ -234,7 +234,7 @@ static bool mddp_f_add_nat_tuple(struct nat_tuple *t)
 			__func__, t, t->list.next, t->list.prev);
 
 	/* init timer and start it */
-	setup_timer(&t->timeout_used,
+	setup_deferrable_timer(&t->timeout_used,
 			mddp_f_timeout_nat_tuple, (unsigned long)t);
 	t->timeout_used.expires = jiffies + HZ * USED_TIMEOUT;
 
@@ -761,4 +761,3 @@ static uint32_t mddp_nfhook_postrouting_v4
 
 	return NF_ACCEPT;
 }
-
