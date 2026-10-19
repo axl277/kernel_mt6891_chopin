@@ -482,7 +482,7 @@ int __init mcupm_logger_init_done(void)
 		if (unlikely(ret != 0))
 			return ret;
 
-		setup_timer(&mcupm_log_timer, &mcupm_log_timeout, 0);
+		setup_deferrable_timer(&mcupm_log_timer, &mcupm_log_timeout, 0);
 		mcupm_log_timer.expires = 0;
 
 		mcupm_logger_inited = 1;
@@ -884,4 +884,3 @@ module_init(mcupm_module_init);
 #ifdef CONFIG_MEDIATEK_EMI
 late_initcall(post_mcupm_set_emi_mpu);
 #endif
-
