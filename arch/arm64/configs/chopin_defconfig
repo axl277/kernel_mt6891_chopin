@@ -584,3 +584,6 @@ CONFIG_REKERNELX=y
 # defaults to n in this tree, so both have to be turned on explicitly.
 CONFIG_TRACEPOINTS=y
 CONFIG_ANDROID_VENDOR_HOOKS=y
+# KPatch Next
+CONFIG_KALLSYMS=y
+CONFIG_KALLSYMS_ALL=y
