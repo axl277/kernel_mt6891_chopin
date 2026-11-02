@@ -1,0 +1,24 @@
+
+name: Copy chopin branch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Copy branch from dashpin
+        run: |
+          git remote add source https://github.com/dashpin/kernel_mt6891_chopin.git
+          git fetch source chopin-a17-cgroup
+          git push origin FETCH_HEAD:refs/heads/chopin-a17-cgroup
