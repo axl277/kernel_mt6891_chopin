@@ -11,7 +11,7 @@ DATE=$(date '+%Y%m%d-%H%M')
 # Device
 DEVICE="${1:-chopin}"
 DEFCONFIG="${DEVICE}_defconfig"
-ZIPNAME="Artic-Kernel-${DEVICE}-${DATE}.zip"
+ZIPNAME="Kernel-${DEVICE}-${DATE}.zip"
 
 echo -e "Building for: $DEVICE\n"
 
@@ -33,7 +33,7 @@ for arg in "$@"; do
     case $arg in
         -c) CLEAN_BUILD=true ;;
         -ksu) INCLUDE_KSU=true
-              ZIPNAME="Artic-Kernel-ReSukiSU-${DEVICE}-${DATE}.zip"
+              ZIPNAME="Kernel-BakaSU-${DEVICE}-${DATE}.zip"
               ;;
     esac
 done
@@ -42,7 +42,7 @@ done
 
 # BakaSU
 if [ "$INCLUDE_KSU" = true ]; then
-    echo "Integrating ReSukiSU..."
+    echo "Integrating BakaSU..."
     curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash
 fi
 
