@@ -19,6 +19,6 @@ jobs:
 
       - name: Copy branch from dashpin
         run: |
-          git remote add source https://github.com/dashpin/kernel_mt6891_chopin.git
-          git fetch source chopin-a17-cgroup
-          git push origin FETCH_HEAD:refs/heads/chopin-a17-cgroup
+          git remote add source https://github.com/TYOPXN360/kernel_mt6893.git
+          git fetch source cgroup-v2-backport
+          git push origin FETCH_HEAD:refs/heads/cgroup-v2-backport
