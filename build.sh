@@ -1,20 +1,14 @@
 #!/bin/bash
-#
-# Build script for Xiaomi Chopin kernel
-#
 
-# Date/Time
 SECONDS=0
 DATE=$(date '+%Y%m%d-%H%M')
 
-# Device
 DEVICE="${1:-chopin}"
 DEFCONFIG="${DEVICE}_defconfig"
 ZIPNAME="Kernel-${DEVICE}-${DATE}.zip"
 
 echo -e "Building for: $DEVICE\n"
 
-# Ensure the toolchain is available
 TC_DIR="$HOME/toolchains/proton-clang"
 CURRENT_DIR=$(pwd)
 if [ ! -d "$TC_DIR" ]; then
@@ -24,15 +18,10 @@ if [ ! -d "$TC_DIR" ]; then
     cd "$CURRENT_DIR"
 fi
 
-# Export environment variables secara global untuk sub-make (vDSO, scripts, dll.)
 export PATH="$TC_DIR/bin:$PATH"
 export ARCH=arm64
 export SUBARCH=arm64
-export CROSS_COMPILE=aarch64-linux-gnu-
-export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
-export CLANG_TRIPLE=aarch64-linux-gnu-
 
-# Process options
 CLEAN_BUILD=false
 INCLUDE_KSU=false
 for arg in "$@"; do
@@ -46,25 +35,29 @@ done
 
 [ "$CLEAN_BUILD" = true ] && rm -rf out
 
-# SukiSU Integration
 if [ "$INCLUDE_KSU" = true ]; then
     echo "Integrating SukiSU..."
     curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
 fi
 
-# Definisi argumen Make secara terpusat
 MAKE_ARGS=(
     O=out
     ARCH=arm64
     CC="ccache clang"
+    LD=ld.lld
+    AR=llvm-ar
+    NM=llvm-nm
+    OBJCOPY=llvm-objcopy
+    OBJDUMP=llvm-objdump
+    READELF=llvm-readelf
+    OBJSIZE=llvm-size
+    STRIP=llvm-strip
     LLVM=1
     LLVM_IAS=1
-    CLANG_TRIPLE=aarch64-linux-gnu-
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 )
 
-# Compilation process
 mkdir -p out
 make "${MAKE_ARGS[@]}" $DEFCONFIG
 
