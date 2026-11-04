@@ -1,4 +1,5 @@
 CONFIG_CROSS_COMPILE="aarch64-linux-android-"
+CONFIG_LOCALVERSION="-Cloverse-g73b1500db6a0"
 # CONFIG_FHANDLE is not set
 CONFIG_LOG_BUF_SHIFT=21
 CONFIG_UCLAMP_TASK=y
@@ -28,7 +29,7 @@ CONFIG_NR_CPUS=8
 CONFIG_PREEMPT=y
 # CONFIG_BOUNCE is not set
 CONFIG_ZSMALLOC=y
-CONFIG_RANDOMIZE_BASE=y
+CONFIG_RANDOMIZE_BASE=n
 CONFIG_CMDLINE="console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=0 "
 # CONFIG_EFI is not set
 CONFIG_BUILD_ARM64_APPENDED_DTB_IMAGE=y
@@ -504,7 +505,6 @@ CONFIG_CRYPTO_ZSTD=y
 # CONFIG_CRYPTO_HW is not set
 CONFIG_CRC8=y
 CONFIG_BLK_CGROUP=y
-
 # KVM + VFIO
 CONFIG_VIRTUALIZATION=y
 CONFIG_KVM=y
@@ -513,14 +513,11 @@ CONFIG_VFIO_PCI=y
 CONFIG_VFIO_MDEV=y
 CONFIG_VFIO_MDEV_DEVICE=y
 CONFIG_IOMMU_SUPPORT=y
-
 # This is needed, otherwise kernel will drop to EL1
 CONFIG_ARM64_VHE=1
-
 # Block device
 CONFIG_BLK_WBT=y
 CONFIG_BLK_WBT_SQ=y
-
 # Network
 CONFIG_IP_NF_TARGET_TTL=y
 CONFIG_IP6_NF_MATCH_HL=y
@@ -546,15 +543,6 @@ CONFIG_NETWORK_FILESYSTEMS=y
 CONFIG_DMABUF_HEAPS=y
 CONFIG_DMABUF_HEAPS_SYSTEM=y
 CONFIG_DMABUF_HEAPS_MTK_MM=y
-
-# ReSukiSU (KernelSU). Integrated by the upstream setup script, which injects
-# drivers/kernelsu and the CONFIG_KSU menu entry.
-CONFIG_KSU=y
-CONFIG_KSU_MANUAL_HOOK=y
-CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK=y
-CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK=y
-CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK=y
-
 # cgroup v2.
 #
 # CONFIG_CGROUPS is the gate for everything below: the per-controller cgroup
@@ -567,7 +555,6 @@ CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK=y
 # still listed a couple of them. Enabling the gate explicitly keeps the file
 # self-contained and reproducible.
 CONFIG_CGROUPS=y
-
 # Per-controller options needed by the cgroup v2 hierarchy this device runs:
 # kernel/cgroup/pids.c provides .dfl_cftypes, cpuset.c provides
 # cpuset_dfl_cftypes, mm/memcontrol.c provides memory_files as .dfl_cftypes,
@@ -579,7 +566,6 @@ CONFIG_CGROUP_PIDS=y
 CONFIG_MEMCG=y
 CONFIG_CGROUP_FREEZER=y
 CONFIG_CGROUP_CPUACCT=y
-
 # cgroup v2 cpu controller. The 4.14 tree already carries MediaTek's backport
 # of the 5.x cfs_rq-level throttling engine (cfs_rq->tg, cfs_bandwidth and the
 # hrtimer period timer in fair.c), but the bandwidth fields of
@@ -589,14 +575,15 @@ CONFIG_CGROUP_CPUACCT=y
 CONFIG_CGROUP_SCHED=y
 CONFIG_FAIR_GROUP_SCHED=y
 CONFIG_CFS_BANDWIDTH=y
-
 # ReKernel-X (https://github.com/myflavor/ReKernel-X): surfaces Binder, signal
 # and netfilter events for frozen processes to userspace over Generic Netlink.
 # Built as an in-tree module so it shares this kernel's headers and kprobes.
 CONFIG_REKERNELX=y
-
 # Vendor trace hooks, used by ReKernel-X (drivers/rekernel_x) to observe Binder
 # and signal activity around frozen processes. TRACEPOINTS has no prompt and
 # defaults to n in this tree, so both have to be turned on explicitly.
 CONFIG_TRACEPOINTS=y
 CONFIG_ANDROID_VENDOR_HOOKS=y
+# KPatch Next
+CONFIG_KALLSYMS=y
+CONFIG_KALLSYMS_ALL=y
