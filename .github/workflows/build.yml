@@ -1,4 +1,4 @@
-Name: Build kernel
+name: Build kernel
 on:
   workflow_dispatch:
 
