@@ -1,0 +1,56 @@
+
+name: Remove KernelSU Drivers
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: bomba
+          fetch-depth: 0
+
+      - name: Remove KernelSU integration
+        run: |
+          git rm -rf drivers/kernelsu || true
+
+          python3 - <<'PY'
+          import os
+
+          files = [
+              "drivers/Kconfig",
+              "drivers/Makefile",
+          ]
+
+          for path in files:
+              if not os.path.isfile(path):
+                  continue
+
+              with open(path, "r") as f:
+                  lines = f.readlines()
+
+              lines = [
+                  line for line in lines
+                  if "kernelsu" not in line.lower()
+              ]
+
+              with open(path, "w") as f:
+                  f.writelines(lines)
+          PY
+
+          git add -A
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "Remove KernelSU drivers integration"
+
+          git push origin HEAD:bomba
