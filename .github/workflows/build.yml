@@ -1,4 +1,4 @@
-name: Build kernel
+Name: Build kernel
 on:
   workflow_dispatch:
 
@@ -13,15 +13,17 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Install Dependencies
+      - name: Install Dependencies & Cross Compilers
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential bc flex bison libssl-dev libelf-dev ccache zip
+          sudo apt-get install -y build-essential bc flex bison libssl-dev libelf-dev ccache zip \
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi clang lld llvm
 
       - name: Run Build Script
         run: |
           chmod +x build.sh
-          ./build.sh chopin -ksu
+          # Parameter -ksu dihapus karena KernelSU sudah di-uninstall
+          ./build.sh chopin
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
