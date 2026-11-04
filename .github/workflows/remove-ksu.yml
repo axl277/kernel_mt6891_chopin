@@ -1,7 +1,16 @@
+
 name: Remove KernelSU
 
 on:
   workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch yang ingin dibersihkan"
+        required: true
+        type: choice
+        options:
+          - bomba
+          - cgroup-v2-backport
 
 permissions:
   contents: write
@@ -11,42 +20,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout branch
+      - name: Checkout target branch
         uses: actions/checkout@v4
         with:
-          ref: cgroup-v2-backport
+          ref: ${{ inputs.target_branch }}
           fetch-depth: 0
 
       - name: Remove KernelSU
         run: |
-          git rm -f KernelSU || true
+          git rm -rf drivers/kernelsu || true
 
-          if [ -f .gitmodules ]; then
-            python3 - <<'PY'
-          import configparser
+          python3 - <<'PY'
           import os
 
-          path = ".gitmodules"
+          for path in ["drivers/Kconfig", "drivers/Makefile"]:
+              if os.path.isfile(path):
+                  with open(path) as f:
+                      lines = f.readlines()
 
-          if os.path.exists(path):
-              config = configparser.ConfigParser()
-              config.read(path)
+                  lines = [
+                      line for line in lines
+                      if "kernelsu" not in line.lower()
+                  ]
 
-              for section in config.sections():
-                  if config.get(section, "path", fallback="") == "KernelSU":
-                      config.remove_section(section)
-
-              with open(path, "w") as f:
-                  config.write(f)
-
-              if not config.sections():
-                  os.remove(path)
+                  with open(path, "w") as f:
+                      f.writelines(lines)
           PY
-          fi
 
           git add -A
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git commit -m "Remove KernelSU"
-          git push origin HEAD:cgroup-v2-backport
+          git commit -m "Remove KernelSU drivers integration"
+
+          git push origin HEAD:${{ inputs.target_branch }}
