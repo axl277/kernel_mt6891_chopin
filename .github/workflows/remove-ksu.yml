@@ -1,0 +1,52 @@
+name: Remove KernelSU
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: cgroup-v2-backport
+          fetch-depth: 0
+
+      - name: Remove KernelSU
+        run: |
+          git rm -f KernelSU || true
+
+          if [ -f .gitmodules ]; then
+            python3 - <<'PY'
+          import configparser
+          import os
+
+          path = ".gitmodules"
+
+          if os.path.exists(path):
+              config = configparser.ConfigParser()
+              config.read(path)
+
+              for section in config.sections():
+                  if config.get(section, "path", fallback="") == "KernelSU":
+                      config.remove_section(section)
+
+              with open(path, "w") as f:
+                  config.write(f)
+
+              if not config.sections():
+                  os.remove(path)
+          PY
+          fi
+
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "Remove KernelSU"
+          git push origin HEAD:cgroup-v2-backport
