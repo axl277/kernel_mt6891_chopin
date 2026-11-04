@@ -23,6 +23,9 @@ jobs:
       - name: Run Build Script
         run: |
           chmod +x build.sh
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
           ./build.sh chopin -ksu
 
       - name: Upload Artifacts
@@ -30,3 +33,4 @@ jobs:
         with:
           name: Kernel
           path: "*.zip"
+          
