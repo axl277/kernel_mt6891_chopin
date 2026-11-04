@@ -1,8 +1,16 @@
 
-name: Remove KernelSU Drivers
+name: Remove KernelSU
 
 on:
   workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch yang ingin dibersihkan"
+        required: true
+        type: choice
+        options:
+          - bomba
+          - cgroup-v2-backport
 
 permissions:
   contents: write
@@ -12,38 +20,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout branch
+      - name: Checkout target branch
         uses: actions/checkout@v4
         with:
-          ref: bomba
+          ref: ${{ inputs.target_branch }}
           fetch-depth: 0
 
-      - name: Remove KernelSU integration
+      - name: Remove KernelSU
         run: |
           git rm -rf drivers/kernelsu || true
 
           python3 - <<'PY'
           import os
 
-          files = [
-              "drivers/Kconfig",
-              "drivers/Makefile",
-          ]
+          for path in ["drivers/Kconfig", "drivers/Makefile"]:
+              if os.path.isfile(path):
+                  with open(path) as f:
+                      lines = f.readlines()
 
-          for path in files:
-              if not os.path.isfile(path):
-                  continue
+                  lines = [
+                      line for line in lines
+                      if "kernelsu" not in line.lower()
+                  ]
 
-              with open(path, "r") as f:
-                  lines = f.readlines()
-
-              lines = [
-                  line for line in lines
-                  if "kernelsu" not in line.lower()
-              ]
-
-              with open(path, "w") as f:
-                  f.writelines(lines)
+                  with open(path, "w") as f:
+                      f.writelines(lines)
           PY
 
           git add -A
@@ -53,4 +54,4 @@ jobs:
 
           git commit -m "Remove KernelSU drivers integration"
 
-          git push origin HEAD:bomba
+          git push origin HEAD:${{ inputs.target_branch }}
