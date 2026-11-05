@@ -35,9 +35,8 @@ done
 
 [ "$CLEAN_BUILD" = true ] && rm -rf out
 
-# KernelSUNext
 if [ "$INCLUDE_KSU" = true ]; then
-    echo "Integrating KernelSUNext..."
+    echo "Integrating SukiSU..."
     curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
 fi
 
