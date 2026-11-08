@@ -1,0 +1,24 @@
+
+name: Copy chopin 4.19 branch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Copy branch from dashpin
+        run: |
+          git remote add source https://github.com/kucingoranye/kernel_xiaomi_mt6893_419
+          git fetch source cp-cfg
+          git push origin FETCH_HEAD:refs/heads/cgroup-v2-backport
