@@ -19,6 +19,6 @@ jobs:
 
       - name: Copy branch from dashpin
         run: |
-          git remote add source https://github.com/TYOPXN360/kernel_mt6893.git
-          git fetch source cgroup-v2-backport
-          git push origin FETCH_HEAD:refs/heads/cgroup-v2-backport
+          git remote add source https://github.com/Hwhmi/kernel_xiaomi_mt6891chopin.git
+          git fetch source chopin_16
+          git push origin FETCH_HEAD:refs/heads/chopin_16
