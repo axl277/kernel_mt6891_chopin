@@ -1,3 +1,4 @@
 [submodule "BakaSU"]
-	path = BakaSU
-	url = https://github.com/Hwhmi/KernelSUU.git
+path = BakaSU
+url = https://github.com/Hwhmi/KernelSUU.git
+
