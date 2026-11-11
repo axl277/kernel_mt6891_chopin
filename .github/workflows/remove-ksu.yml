@@ -14,7 +14,7 @@ jobs:
       - name: Checkout branch
         uses: actions/checkout@v4
         with:
-          ref: cgroup-v2-backport
+          ref: chopin_16
           fetch-depth: 0
 
       - name: Remove KernelSU
@@ -49,4 +49,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git commit -m "Remove KernelSU"
-          git push origin HEAD:cgroup-v2-backport
+          git push origin HEAD:chopin_16
