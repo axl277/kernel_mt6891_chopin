@@ -1,5 +1,5 @@
 
-name: Remove KernelSU Drivers
+name: Remove KernelSU Driver
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  remove:
+  remove-kernelsu:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,39 +18,57 @@ jobs:
           ref: chopin_16
           fetch-depth: 0
 
-      - name: Remove KernelSU integration
+      - name: Remove KernelSU driver
         run: |
-          git rm -rf drivers/kernelsu || true
+          set -e
 
+          if [ -e drivers/kernelsu ] || [ -L drivers/kernelsu ]; then
+            git rm -rf --ignore-unmatch drivers/kernelsu
+            echo "KernelSU driver removed."
+          else
+            echo "KernelSU driver not found."
+          fi
+
+      - name: Remove KernelSU build references
+        run: |
           python3 - <<'PY'
-          import os
+          from pathlib import Path
 
           files = [
-              "drivers/Kconfig",
-              "drivers/Makefile",
+              Path("drivers/Kconfig"),
+              Path("drivers/Makefile"),
           ]
 
           for path in files:
-              if not os.path.isfile(path):
+              if not path.exists():
                   continue
 
-              with open(path, "r") as f:
-                  lines = f.readlines()
-
-              lines = [
+              lines = path.read_text().splitlines(keepends=True)
+              filtered = [
                   line for line in lines
                   if "kernelsu" not in line.lower()
               ]
 
-              with open(path, "w") as f:
-                  f.writelines(lines)
+              if len(filtered) != len(lines):
+                  path.write_text("".join(filtered))
+                  print(f"Cleaned: {path}")
           PY
 
-          git add -A
+      - name: Check remaining references
+        run: |
+          git grep -ni kernelsu || true
 
+      - name: Commit and push
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git commit -m "Remove KernelSU drivers integration"
+          git add -A
 
-          git push origin HEAD:bomba
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Remove KernelSU driver"
+          git push origin HEAD:chopin_16
