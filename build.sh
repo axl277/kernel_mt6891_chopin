@@ -16,6 +16,7 @@ DATE=$(date '+%Y%m%d-%H%M')
 
 DEVICE="${1:-chopin}"
 DEFCONFIG="${DEVICE}_defconfig"
+DEFCONFIG_PATH="arch/arm64/configs/${DEFCONFIG}"
 ZIPNAME="Kernel-${DEVICE}-${DATE}.zip"
 
 echo "================================"
@@ -63,6 +64,16 @@ for arg in "$@"; do
 done
 
 # ==========================================
+# CHECK DEFCONFIG
+# ==========================================
+
+if [ ! -f "$DEFCONFIG_PATH" ]; then
+    echo "ERROR: Defconfig not found!"
+    echo "$DEFCONFIG_PATH"
+    exit 1
+fi
+
+# ==========================================
 # CLEAN BUILD
 # ==========================================
 
@@ -79,7 +90,7 @@ if [ "$INCLUDE_KSU" = true ]; then
 
     echo "================================"
     echo "Integrating SukiSU-Ultra"
-    echo "Branch: builtin"
+    echo "Branch: main"
     echo "================================"
 
     if [ ! -d drivers/kernelsu ]; then
@@ -120,30 +131,53 @@ if [ "$INCLUDE_KSU" = true ]; then
     # ======================================
 
     echo ""
-    echo "========== SukiSU Compatibility Check =========="
+    echo "========== STATIC_CALL CHECK =========="
 
-    if [ -f drivers/kernelsu/kernel_includes.h ]; then
-
-        echo "---- kernel_includes.h ----"
-
-        sed -n '60,100p' \
-        drivers/kernelsu/kernel_includes.h
-
-    else
-        echo "kernel_includes.h NOT FOUND"
+    if [ -f drivers/kernelsu/hook/lsm_hook.c ]; then
+        echo "---- lsm_hook.c ----"
+        sed -n '1,100p' drivers/kernelsu/hook/lsm_hook.c
     fi
 
     echo ""
     echo "---- static_call references ----"
 
     grep -RnE \
-    '\b(static_call|DEFINE_STATIC_CALL|DECLARE_STATIC_CALL|static_call_update|static_call_cond)\b' \
+    'static_call|DEFINE_STATIC_CALL|DECLARE_STATIC_CALL|static_call_update|static_call_cond' \
     drivers/kernelsu \
     --include='*.c' \
     --include='*.h' || true
 
-    echo "========== End Compatibility Check =========="
+    echo "========== END CHECK =========="
+
+    # ======================================
+    # FIX KSU DEFCONFIG
+    # ======================================
+
     echo ""
+    echo "Preparing SukiSU configuration..."
+
+    set_config() {
+        local CONFIG_NAME="$1"
+
+        if grep -q "^${CONFIG_NAME}=.*" "$DEFCONFIG_PATH"; then
+            sed -i "s/^${CONFIG_NAME}=.*/${CONFIG_NAME}=y/" "$DEFCONFIG_PATH"
+
+        elif grep -q "^# ${CONFIG_NAME} is not set" "$DEFCONFIG_PATH"; then
+            sed -i "s/^# ${CONFIG_NAME} is not set/${CONFIG_NAME}=y/" "$DEFCONFIG_PATH"
+
+        else
+            echo "${CONFIG_NAME}=y" >> "$DEFCONFIG_PATH"
+        fi
+    }
+
+    set_config CONFIG_KPROBES
+    set_config CONFIG_EXT4_FS
+    set_config CONFIG_KSU
+
+    echo "Required configuration added:"
+    echo "CONFIG_KPROBES=y"
+    echo "CONFIG_EXT4_FS=y"
+    echo "CONFIG_KSU=y"
 
 fi
 
@@ -157,6 +191,7 @@ mkdir -p out
 # GENERATE DEFCONFIG
 # ==========================================
 
+echo ""
 echo "Generating defconfig..."
 
 make O=out ARCH=arm64 "$DEFCONFIG"
@@ -167,22 +202,33 @@ make O=out ARCH=arm64 "$DEFCONFIG"
 
 if [ "$INCLUDE_KSU" = true ]; then
 
-    echo "Checking SukiSU configuration..."
+    echo ""
+    echo "========== KSU CONFIGURATION =========="
 
-    if ! grep -q '^CONFIG_KSU=y' out/.config; then
-        echo "ERROR: CONFIG_KSU is not enabled!"
-        echo "Check your ${DEFCONFIG}"
+    grep -E \
+    '^(CONFIG_KSU|CONFIG_KPROBES|CONFIG_KRETPROBES|CONFIG_EXT4_FS|CONFIG_KPM|CONFIG_KSU_SUSFS)=' \
+    out/.config || true
+
+    echo "======================================="
+
+    if ! grep -q '^CONFIG_KPROBES=y' out/.config; then
+        echo "ERROR: CONFIG_KPROBES is not enabled!"
         exit 1
     fi
 
-    echo "CONFIG_KSU is enabled."
+    if ! grep -q '^CONFIG_EXT4_FS=y' out/.config; then
+        echo "ERROR: CONFIG_EXT4_FS is not enabled!"
+        exit 1
+    fi
 
-    echo ""
-    echo "---- KSU CONFIGURATION ----"
+    if ! grep -q '^CONFIG_KSU=y' out/.config; then
+        echo "ERROR: CONFIG_KSU is not enabled!"
+        echo "Kconfig rejected CONFIG_KSU."
+        echo "Check KSU dependencies and Kconfig integration."
+        exit 1
+    fi
 
-    grep -E \
-    '^CONFIG_KSU|^CONFIG_KPM|^CONFIG_KSU_SUSFS' \
-    out/.config || true
+    echo "SukiSU configuration verified."
 
 fi
 
@@ -257,6 +303,7 @@ echo "================================"
 
 echo "Device: $DEVICE"
 echo "SukiSU: $INCLUDE_KSU"
+echo "Integration: main"
 echo "KPM: Disabled"
 echo "SUSFS: Not integrated"
 echo "Zip: $ZIPNAME"
