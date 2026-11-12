@@ -40,7 +40,7 @@ for arg in "$@"; do
             ;;
         -ksu)
             INCLUDE_KSU=true
-            ZIPNAME="Kernel-SuSU-${DEVICE}-${DATE}.zip"
+            ZIPNAME="Kernel-SukiSU-${DEVICE}-${DATE}.zip"
             ;;
     esac
 done
