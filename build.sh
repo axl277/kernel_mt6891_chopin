@@ -1,94 +1,113 @@
+
 #!/bin/bash
 
 set -e
 
-# Date / Time
+# ==========================================
+# DATE / TIME
+# ==========================================
+
 SECONDS=0
 DATE=$(date '+%Y%m%d-%H%M')
 
-# Default Options
-DEVICE="chopin"
-CLEAN_BUILD=false
-INCLUDE_KSU=false
+# ==========================================
+# DEVICE
+# ==========================================
 
-# Parse Arguments
-for arg in "$@"; do
-    case "$arg" in
-        -c|--clean)
-            CLEAN_BUILD=true
-            ;;
-        -ksu|--ksu)
-            INCLUDE_KSU=true
-            ;;
-        -*)
-            echo "Unknown option: $arg"
-            exit 1
-            ;;
-        *)
-            DEVICE="$arg"
-            ;;
-    esac
-done
-
+DEVICE="${1:-chopin}"
 DEFCONFIG="${DEVICE}_defconfig"
-if [ "$INCLUDE_KSU" = true ]; then
-    ZIPNAME="Kernel-SukiSU-${DEVICE}-${DATE}.zip"
-else
-    ZIPNAME="Kernel-${DEVICE}-${DATE}.zip"
-fi
+ZIPNAME="Kernel-${DEVICE}-${DATE}.zip"
 
-echo -e "Building for: $DEVICE (SukiSU: $INCLUDE_KSU)\n"
+echo "================================"
+echo "Building kernel for: $DEVICE"
+echo "================================"
 
-# Toolchain
+# ==========================================
+# TOOLCHAIN
+# ==========================================
+
 TC_DIR="$HOME/toolchains/proton-clang"
 CURRENT_DIR=$(pwd)
 
 if [ ! -d "$TC_DIR" ]; then
     mkdir -p "$HOME/toolchains"
+
     cd "$HOME/toolchains"
+
     git clone --depth=1 \
         https://gitlab.com/LeCmnGend/proton-clang.git \
         -b clang-15 proton-clang
+
     cd "$CURRENT_DIR"
 fi
 
 export PATH="$TC_DIR/bin:$PATH"
 
-# Clean build
+# ==========================================
+# OPTIONS
+# ==========================================
+
+CLEAN_BUILD=false
+INCLUDE_KSU=false
+
+for arg in "$@"; do
+    case "$arg" in
+        -c)
+            CLEAN_BUILD=true
+            ;;
+        -ksu)
+            INCLUDE_KSU=true
+            ZIPNAME="Kernel-SukiSU-${DEVICE}-${DATE}.zip"
+            ;;
+    esac
+done
+
+# ==========================================
+# CLEAN BUILD
+# ==========================================
+
 if [ "$CLEAN_BUILD" = true ]; then
     echo "Cleaning build directory..."
     rm -rf out
 fi
 
-# SukiSU Integration
+# ==========================================
+# SUKISU INTEGRATION
+# ==========================================
+
 if [ "$INCLUDE_KSU" = true ]; then
 
     echo "================================"
     echo "Integrating SukiSU-Ultra"
-    echo "Branch: nongki (Kernel 4.14)"
+    echo "Branch: builtin"
     echo "================================"
 
     if [ ! -d drivers/kernelsu ]; then
+
         curl -LSs \
-        "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/nongki/kernel/setup.sh" \
-        | bash -s nongki
+        "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" \
+        | bash -s builtin
+
     else
         echo "SukiSU source already exists."
     fi
 
     # Verify source
+
     if [ ! -d drivers/kernelsu ]; then
         echo "ERROR: SukiSU source not found!"
         exit 1
     fi
 
     # Verify Kconfig
+
     if ! grep -q 'kernelsu/Kconfig' drivers/Kconfig; then
         echo "ERROR: SukiSU Kconfig integration missing!"
         exit 1
     fi
 
     # Verify Makefile
+
     if ! grep -q 'kernelsu/' drivers/Makefile; then
         echo "ERROR: SukiSU Makefile integration missing!"
         exit 1
@@ -96,35 +115,85 @@ if [ "$INCLUDE_KSU" = true ]; then
 
     echo "SukiSU source integration verified."
 
+    # ======================================
+    # STATIC_CALL DIAGNOSTIC
+    # ======================================
+
+    echo ""
+    echo "========== SukiSU Compatibility Check =========="
+
+    if [ -f drivers/kernelsu/kernel_includes.h ]; then
+
+        echo "---- kernel_includes.h ----"
+
+        sed -n '60,100p' \
+        drivers/kernelsu/kernel_includes.h
+
+    else
+        echo "kernel_includes.h NOT FOUND"
+    fi
+
+    echo ""
+    echo "---- static_call references ----"
+
+    grep -RnE \
+    '\b(static_call|DEFINE_STATIC_CALL|DECLARE_STATIC_CALL|static_call_update|static_call_cond)\b' \
+    drivers/kernelsu \
+    --include='*.c' \
+    --include='*.h' || true
+
+    echo "========== End Compatibility Check =========="
+    echo ""
+
 fi
 
-# Prepare output
+# ==========================================
+# PREPARE OUTPUT
+# ==========================================
+
 mkdir -p out
 
-# Generate defconfig
+# ==========================================
+# GENERATE DEFCONFIG
+# ==========================================
+
 echo "Generating defconfig..."
+
 make O=out ARCH=arm64 "$DEFCONFIG"
 
-# Configure SukiSU options dynamically
-if [ "$INCLUDE_KSU" = true ]; then
-    echo "Enabling SukiSU Manual Hook in .config..."
-    ./scripts/config --file out/.config \
-        -e CONFIG_KSU \
-        -e CONFIG_KSU_MANUAL_HOOK \
-        -d CONFIG_KSU_KPROBES_HOOK
+# ==========================================
+# VERIFY KSU CONFIGURATION
+# ==========================================
 
-    make O=out ARCH=arm64 olddefconfig
+if [ "$INCLUDE_KSU" = true ]; then
+
+    echo "Checking SukiSU configuration..."
 
     if ! grep -q '^CONFIG_KSU=y' out/.config; then
-        echo "ERROR: CONFIG_KSU failed to enable!"
+        echo "ERROR: CONFIG_KSU is not enabled!"
+        echo "Check your ${DEFCONFIG}"
         exit 1
     fi
 
-    grep -E '^CONFIG_KSU|^CONFIG_KPM' out/.config || true
+    echo "CONFIG_KSU is enabled."
+
+    echo ""
+    echo "---- KSU CONFIGURATION ----"
+
+    grep -E \
+    '^CONFIG_KSU|^CONFIG_KPM|^CONFIG_KSU_SUSFS' \
+    out/.config || true
+
 fi
 
-# Compile
-echo -e "\nStarting compilation...\n"
+# ==========================================
+# COMPILE KERNEL
+# ==========================================
+
+echo ""
+echo "================================"
+echo "Starting kernel compilation..."
+echo "================================"
 
 make -j"$(nproc --all)" \
     O=out \
@@ -136,39 +205,62 @@ make -j"$(nproc --all)" \
     CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
     Image.gz
 
-# Verify kernel image
+# ==========================================
+# VERIFY KERNEL IMAGE
+# ==========================================
+
 if [ ! -f out/arch/arm64/boot/Image.gz ]; then
     echo "ERROR: Image.gz not found!"
     exit 1
 fi
 
-echo -e "\nKernel compiled successfully!"
+echo ""
+echo "Kernel compiled successfully!"
 
-# AnyKernel3
+# ==========================================
+# ANYKERNEL3
+# ==========================================
+
 echo "Preparing AnyKernel3..."
 
 if [ ! -d AnyKernel3 ]; then
+
     git clone -q --depth=1 \
         https://github.com/axl277/AnyKernel3 \
         AnyKernel3
+
 fi
 
 cp out/arch/arm64/boot/Image.gz AnyKernel3/
 
-# Package
+# ==========================================
+# PACKAGE
+# ==========================================
+
 rm -f "$ZIPNAME"
 
 (
     cd AnyKernel3
+
     zip -r9 "../$ZIPNAME" * \
         -x '*.git*' README.md '*placeholder'
 )
 
-# Finish
-echo -e "\n================================"
-echo "Build completed successfully!"
+# ==========================================
+# FINISH
+# ==========================================
+
+echo ""
+echo "================================"
+echo "BUILD COMPLETED SUCCESSFULLY!"
+echo "================================"
+
 echo "Device: $DEVICE"
 echo "SukiSU: $INCLUDE_KSU"
+echo "KPM: Disabled"
+echo "SUSFS: Not integrated"
 echo "Zip: $ZIPNAME"
+
 echo "Time: $((SECONDS / 60))m $((SECONDS % 60))s"
+
 echo "================================"
