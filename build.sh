@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 set -e
@@ -7,12 +6,38 @@ set -e
 SECONDS=0
 DATE=$(date '+%Y%m%d-%H%M')
 
-# Device
-DEVICE="${1:-chopin}"
-DEFCONFIG="${DEVICE}_defconfig"
-ZIPNAME="Kernel-${DEVICE}-${DATE}.zip"
+# Default Options
+DEVICE="chopin"
+CLEAN_BUILD=false
+INCLUDE_KSU=false
 
-echo -e "Building for: $DEVICE\n"
+# Parse Arguments
+for arg in "$@"; do
+    case "$arg" in
+        -c|--clean)
+            CLEAN_BUILD=true
+            ;;
+        -ksu|--ksu)
+            INCLUDE_KSU=true
+            ;;
+        -*)
+            echo "Unknown option: $arg"
+            exit 1
+            ;;
+        *)
+            DEVICE="$arg"
+            ;;
+    esac
+done
+
+DEFCONFIG="${DEVICE}_defconfig"
+if [ "$INCLUDE_KSU" = true ]; then
+    ZIPNAME="Kernel-SukiSU-${DEVICE}-${DATE}.zip"
+else
+    ZIPNAME="Kernel-${DEVICE}-${DATE}.zip"
+fi
+
+echo -e "Building for: $DEVICE (SukiSU: $INCLUDE_KSU)\n"
 
 # Toolchain
 TC_DIR="$HOME/toolchains/proton-clang"
@@ -29,22 +54,6 @@ fi
 
 export PATH="$TC_DIR/bin:$PATH"
 
-# Options
-CLEAN_BUILD=false
-INCLUDE_KSU=false
-
-for arg in "$@"; do
-    case "$arg" in
-        -c)
-            CLEAN_BUILD=true
-            ;;
-        -ksu)
-            INCLUDE_KSU=true
-            ZIPNAME="Kernel-SukiSU-${DEVICE}-${DATE}.zip"
-            ;;
-    esac
-done
-
 # Clean build
 if [ "$CLEAN_BUILD" = true ]; then
     echo "Cleaning build directory..."
@@ -56,15 +65,13 @@ if [ "$INCLUDE_KSU" = true ]; then
 
     echo "================================"
     echo "Integrating SukiSU-Ultra"
-    echo "Branch: builtin"
+    echo "Branch: nongki (Kernel 4.14)"
     echo "================================"
 
     if [ ! -d drivers/kernelsu ]; then
-
         curl -LSs \
-        "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" \
-        | bash -s builtin
-
+        "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/nongki/kernel/setup.sh" \
+        | bash -s nongki
     else
         echo "SukiSU source already exists."
     fi
@@ -96,24 +103,24 @@ mkdir -p out
 
 # Generate defconfig
 echo "Generating defconfig..."
-
 make O=out ARCH=arm64 "$DEFCONFIG"
 
-# Verify KSU configuration
+# Configure SukiSU options dynamically
 if [ "$INCLUDE_KSU" = true ]; then
+    echo "Enabling SukiSU Manual Hook in .config..."
+    ./scripts/config --file out/.config \
+        -e CONFIG_KSU \
+        -e CONFIG_KSU_MANUAL_HOOK \
+        -d CONFIG_KSU_KPROBES_HOOK
 
-    echo "Checking SukiSU configuration..."
+    make O=out ARCH=arm64 olddefconfig
 
     if ! grep -q '^CONFIG_KSU=y' out/.config; then
-        echo "ERROR: CONFIG_KSU is not enabled!"
-        echo "Check your ${DEFCONFIG}"
+        echo "ERROR: CONFIG_KSU failed to enable!"
         exit 1
     fi
 
-    echo "CONFIG_KSU is enabled."
-
     grep -E '^CONFIG_KSU|^CONFIG_KPM' out/.config || true
-
 fi
 
 # Compile
