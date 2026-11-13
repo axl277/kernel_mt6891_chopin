@@ -33,17 +33,17 @@ for arg in "$@"; do
     case $arg in
         -c) CLEAN_BUILD=true ;;
         -ksu) INCLUDE_KSU=true
-              ZIPNAME="Kernel-BakaSU-${DEVICE}-${DATE}.zip"
+              ZIPNAME="Kernel-OriginSU-${DEVICE}-${DATE}.zip"
               ;;
     esac
 done
 
 [ "$CLEAN_BUILD" = true ] && rm -rf out
 
-# BakaSU
+# OriginSU
 if [ "$INCLUDE_KSU" = true ]; then
-    echo "Integrating BakaSU..."
-    curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash
+    echo "Integrating OriginSU..."
+    curl -LSs "https://raw.githubusercontent.com/samakshkambxj/OriginSU/main/kernel/setup.sh" | bash
 fi
 
 # Compilation process
