@@ -37,9 +37,9 @@ done
 DEFCONFIG="${DEVICE}_defconfig"
 
 if [ "$INCLUDE_KSU" = true ]; then
-    ZIPNAME="Kernel-MultiManager-${DEVICE}-${DATE}.zip"
+    ZIPNAME="kernel-bakasu-multiManager-${DEVICE}-${DATE}.zip"
 else
-    ZIPNAME="Kernel-${DEVICE}-${DATE}.zip"
+    ZIPNAME="kernel-bakasu-multiManager-${DEVICE}-${DATE}.zip"
 fi
 
 ROOT_DIR=$(pwd -P)
